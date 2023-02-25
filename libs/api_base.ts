@@ -18,7 +18,7 @@ export class APIBase implements MisskeyAPI {
 		this.parent = parent;
 	}
 
-	public fetch<T>(input: string | URL | Request, params: Record<string, unknown>, requestInit?: RequestInit): Promise<T> {
+	protected beforeFetch(requestInit?: RequestInit) {
 		const init: RequestInit = requestInit ? Object.assign({}, requestInit) : {};
 
 		if (!init.method) {
@@ -32,9 +32,20 @@ export class APIBase implements MisskeyAPI {
 		}
 		init.headers.set('Content-Type', 'application/json');
 
-		init.body = JSON.stringify(Object.assign({
-			i: this.accessToken,
-		}, params));
+		return init;
+	}
+
+	public fetch<T>(input: string | URL | Request, params: Record<string, unknown>, requestInit?: RequestInit): Promise<T> {
+		const init = this.beforeFetch(requestInit);
+
+		const accessToken = this.accessToken;
+		init.body = JSON.stringify(
+			accessToken
+				? Object.assign({
+					i: this.accessToken,
+				}, params)
+				: params,
+		);
 
 		return fetch(input, init).then((response) => {
 			return response.json().then((result) => {
@@ -42,6 +53,29 @@ export class APIBase implements MisskeyAPI {
 					throw new Error('API Error:', { cause: result });
 				}
 				return <T> result;
+			});
+		});
+	}
+
+	public authorizedFetch<T>(input: string | URL | Request, params: Record<string, unknown>, requestInit?: RequestInit): Promise<T> {
+		const init = this.beforeFetch(requestInit);
+
+		const accessToken = this.accessToken;
+
+		if (!accessToken) {
+			return Promise.reject(new Error('No access token has been set.'));
+		}
+
+		init.body = JSON.stringify(Object.assign({
+			i: accessToken,
+		}, params));
+
+		return fetch(input, init).then((response) => {
+			return response.text().then((result) => {
+				if (!response.ok) {
+					throw new Error('API Error:', { cause: result });
+				}
+				return <T> (result ? JSON.parse(result) : {});
 			});
 		});
 	}
