@@ -11,6 +11,6 @@ export class API extends APIBase {
 	}
 
 	public meta(detail = true) {
-		return this.fetch(this.baseURL + '/meta', { detail: detail });
+		return this.fetch<Meta>(this.baseURL + '/meta', { detail: detail });
 	}
 }

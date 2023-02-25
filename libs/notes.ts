@@ -2,11 +2,21 @@ import { APIBase } from './api_base.ts';
 
 class Notes extends APIBase {
 	public _(option: NotesOption) {
-		return this.fetch<Note[]>(this.baseURL, option);
+		return this.fetch<NotesResponse>(this.baseURL, option);
 	}
 
-	public children() {
-		console.log(2);
+	public children(option: NotesChildrenOption) {
+		return this.fetch<NotesResponse>(this.baseURL + '/children', option);
+	}
+
+	public create(option: NotesCreateOption) {
+		return this.authorizedFetch<NotesCreateResponse>(this.baseURL + '/create', option);
+	}
+
+	public delete(option: NotesDeleteOption) {
+		return this.authorizedFetch(this.baseURL + '/delete', option).then(() => {
+			return;
+		});
 	}
 }
 
@@ -23,8 +33,16 @@ export function createNotes(path: string, parent: MisskeyAPI): NotesAPI {
 		},
 	});
 
-	NotesApi.children = () => {
-		return notes.children();
+	/*NotesApi.children = (option: NotesChildrenOption) => {
+		return notes.children(option);
+	};*/
+
+	NotesApi.create = (option: NotesCreateOption) => {
+		return notes.create(option);
+	};
+
+	NotesApi.delete = (option: NotesDeleteOption) => {
+		return notes.delete(option);
 	};
 
 	return NotesApi;
